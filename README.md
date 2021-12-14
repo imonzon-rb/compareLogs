@@ -19,5 +19,3 @@ assumption: file1 and file2 are not ordered.
 
     - file3: Stream[DomainObject] = file1Domain filterWith file2Domain
     - write ouput(file3, targetPath)
-
-
