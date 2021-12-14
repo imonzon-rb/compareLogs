@@ -41,3 +41,7 @@ object Establishment{
 }
 
 case class Terminal (terminalNumber: String)
+object Terminal{
+  implicit val encoder: Encoder[Terminal] = deriveEncoder
+  implicit val decoder: Decoder[Terminal] = deriveDecoder
+}
