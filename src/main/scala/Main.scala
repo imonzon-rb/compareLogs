@@ -9,12 +9,10 @@ import io.circe.syntax.EncoderOps
 import infrastructure._
 import io.circe.{Decoder, Encoder}
 
-import java.nio.charset.Charset
 
 object Main extends IOApp {
   override def run(args: List[String]): IO[ExitCode] =
     program[IO]
-      .evalMap(s => IO.println(s))
       .compile
       .drain
       .as(ExitCode.Success)
