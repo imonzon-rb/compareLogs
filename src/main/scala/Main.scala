@@ -7,6 +7,7 @@ import fs2.{Pipe, Stream, text}
 import io.circe.fs2._
 import io.circe.syntax.EncoderOps
 import infrastructure._
+import io.circe.{Decoder, Encoder}
 
 import java.nio.charset.Charset
 
@@ -21,32 +22,31 @@ object Main extends IOApp {
   /** I want program to return creation of output file */
   def program[F[_] : Files : Sync]: Stream[F, SiteCreationMessage] = {
     Stream.eval(config.load[F]).flatMap(config => {
-      val partA: Stream[F, SiteCreationMessage] = for {
-        partAB <- consumeFile(config.file1)
-        partB <- consumeFile(config.file2)
-        if partAB != partB
-      } yield partAB
+      val partA: Stream[F, SiteCreationMessage] =
+        for {
+          partAB <- consumeFile[F, SiteCreationMessage](config.file1)
+          partB <- consumeFile[F, SiteCreationMessage](config.file1)
+          if partAB != partB
+        } yield partAB
 
       partA
-//        .through(writeFile(config.target))
+        .through(writeFile(config.target))
     })
   }
 
-  def consumeFile[F[_] : Files : Sync](path: Path): Stream[F, SiteCreationMessage] = {
+  def consumeFile[F[_] : Files : Sync, A: Decoder](path: Path): Stream[F, A] =
     Files[F]
       .readAll(path)
       .through(text.utf8.decode)
       .through(text.lines)
       .through(stringStreamParser)
-      .through(decoder[F, SiteCreationMessage])
-  }
+      .through(decoder[F, A])
 
 
-  def writeFile[F[_]: Files](target: Path): Pipe[F, SiteCreationMessage, fs2.INothing]  = {
+  def writeFile[F[_]: Files, A: Encoder](target: Path): Pipe[F, A, fs2.INothing]  =
     in => in
       .through(_.map(_.asJson.noSpaces))
       .through(text.utf8.encode)
       .through(Files[F].writeAll(target))
-  }
 
 }
